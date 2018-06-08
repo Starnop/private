@@ -1,0 +1,72 @@
+ sudo apt-get update
+
+
+sudo apt-get install \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    software-properties-common
+
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+
+sudo add-apt-repository \
+    "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+    $(lsb_release -cs) \
+    stable"
+
+sudo apt-get update
+
+apt-get -y install  docker-ce
+
+sudo systemctl enable docker
+
+sudo systemctl start docker
+
+docker run hello-world
+
+
+sudo apt-get update && apt-get install -y apt-transport-https
+
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+cat <<EOF > /etc/apt/sources.list.d/kubernetes.list
+deb http://apt.kubernetes.io/ kubernetes-xenial main
+EOF
+
+sudo apt-get update
+
+RELEASE="1.10.2-00"
+apt-get -y install kubelet=${RELEASE} kubeadm=${RELEASE} kubectl=${RELEASE}
+
+
+kubeadm init --pod-network-cidr 10.244.0.0/16 --kubernetes-version stable-1.10
+
+export KUBECONFIG=/etc/kubernetes/admin.conf
+
+kubectl create -f https://github.com/coreos/flannel/raw/master/Documentation/kube-flannel.yml
+
+
+apt-get install -y wget make gcc git socat 
+
+wget  https://dl.google.com/go/go1.10.2.linux-amd64.tar.gz
+tar -C /usr/local -xzf go1.10.2.linux-amd64.tar.gz
+
+export GOROOT=/usr/local/go
+export GOPATH=$HOME/gopath
+export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
+export PATH=$PATH:/usr/local/bin
+
+wget https://github.com/coreos/etcd/releases/download/v3.3.5/etcd-v3.3.5-linux-amd64.tar.gz
+tar -xzvf etcd-v3.3.5-linux-amd64.tar.gz -C /usr/local
+export PATH=$PATH:/usr/local/etcd-v3.3.5-linux-amd64
+
+rm -rf $GOPATH/src/k8s.io/kubernetes
+go get k8s.io/kubernetes
+cd $GOPATH/src/k8s.io/kubernetes/
+
+go get -u github.com/onsi/ginkgo/ginkgo
+
+go get github.com/tools/godep
+godep restore
+godep save
+
+pouchd --enable-cri --cri-version v1alpha2 > pouchd.log  2>&1  &
