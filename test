@@ -70,3 +70,5 @@ godep restore
 godep save
 
 pouchd --enable-cri --cri-version v1alpha2 > pouchd.log  2>&1  &
+
+go run hack/e2e.go -- --test --test_args="--host=https://10.140.0.2:6443 --ginkgo.focus=\[Feature:Performance\]" --provider=local
