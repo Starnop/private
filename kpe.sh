@@ -6,24 +6,84 @@
 set -o errexit
 set -o nounset
 
-KUBERNETES_VERSION="v1.9.4"
+echo "----------------------------------"
+echo "Whether to configure CNI config ?"
+echo "(Y/y) Y"
+echo "(N/n) N"
+echo "(0) exit"
+echo "----------------------------------"
+read input
+case $input in
+    Y | y )
+    CONFIG_CNI="true";;
+    N | n)
+    CONFIG_CNI="false";;
+    0)
+    exit;;
+esac
+echo "CONFIG_CNI:"$CONFIG_CNI
+
+echo "----------------------------------"
+echo "Is it the master node ?"
+echo "(Y/y) Y"
+echo "(N/n) N"
+echo "(0) exit"
+echo "----------------------------------"
+read input
+case $input in
+    Y | y )
+    MASTER_NODE="true";;
+    N | n)
+    MASTER_NODE="false";;
+    0)
+    exit;;
+esac
+echo "MASTER_NODE:"$MASTER_NODE
+
+update_pouch="false"
+cri_test="false"
+e2e_test="false"
+k8s_cluster="false"
+e2e_focus="should report resource usage through the stats api"
+
+KUBERNETES_VERSION="release-1.10"
 KUBERNETES_VERSION_UBUNTU="1.10.2-00"
 KUBERNETES_VERSION_CENTOS="1.10.2-0.x86_64"
 MASTER_CIDR="10.244.1.0/24"
 pouchd_log="out.file"
 pouch_github="https://github.com/Starnop/pouch.git"
-pouch_github_branch="reopenlog"
-cri_version="v1alpha1"
+pouch_github_branch="cri-update"
+cri_version="v1alpha2"
 kubeadm_log="kubeadm.log"
 cri_tools_rlease="1.10"
 cri_shim="/var/run/pouchcri.sock"
 cri_validation_log="crivalidation.log"
-update_pouch="false"
-cri_test="false"
-e2e_test="true"
-k8s_cluster="false"
+
+
+# preparation
+install_tools_ubuntu() {
+        apt-get update
+        apt-get install -y wget
+        apt-get install -y make
+        apt-get install -y gcc
+        apt-get install -y git  
+        apt-get install -y socat      
+}
+
+install_tools(){
+        yum -y install wget
+        yum -y install make
+        yum -y install gcc
+        yum -y install git
+}
 
 # public
+
+install_go(){
+        wget  https://dl.google.com/go/go1.10.2.linux-amd64.tar.gz
+        tar -C /usr/local -xzf go1.10.2.linux-amd64.tar.gz        
+} 
+
 setup_path(){
         export GOROOT=/usr/local/go
         export GOPATH=$HOME/gopath
@@ -32,7 +92,7 @@ setup_path(){
 }
 
 install_ginkgo(){
-        go get -u github.com/onsi/ginkgo/ginkgo
+    go get -u github.com/onsi/ginkgo/ginkgo
 }
 
 # update_pouch
@@ -70,30 +130,17 @@ install_etcd(){
         export PATH=$PATH:/usr/local/etcd-v3.3.5-linux-amd64
 }
 
-checkout_kubernetes(){
+get_kubernetes(){
         rm -rf $GOPATH/src/k8s.io/kubernetes
         go get k8s.io/kubernetes
+}
+
+start_e2e_test(){        
         cd $GOPATH/src/k8s.io/kubernetes/
         git checkout $KUBERNETES_VERSION
-        make test-e2e-node RUNTIME=remote CONTAINER_RUNTIME_ENDPOINT=unix:///var/run/pouchcri.sock
+        make test-e2e-node RUNTIME=remote FOCUS="should report resource usage through the stats api" CONTAINER_RUNTIME_ENDPOINT=unix:///var/run/pouchcri.sock
 }
 
-# preparation
-install_tools_ubuntu() {
-        apt-get update
-        apt-get install -y wget
-        apt-get install -y make
-        apt-get install -y gcc
-        apt-get install -y git  
-        apt-get install -y socat      
-}
-
-install_tools(){
-        yum -y install wget
-        yum -y install make
-        yum -y install gcc
-        yum -y install git
-}
 
 install_containerd(){
         wget https://github.com/containerd/containerd/releases/download/v1.0.3/containerd-1.0.3.linux-amd64.tar.gz
@@ -106,10 +153,7 @@ install_runc(){
         mv /usr/local/bin/runc.amd64 /usr/local/bin/runc
 }
 
-install_go(){
-        wget  https://dl.google.com/go/go1.10.2.linux-amd64.tar.gz
-        tar -C /usr/local -xzf go1.10.2.linux-amd64.tar.gz        
-}
+
 
 #pouch
 install_pouch_source(){        
@@ -240,7 +284,6 @@ case "$lsb_dist" in
 
     ubuntu)
         if $update_pouch; then
-            #statements
             stop_pouch
         else
             install_tools_ubuntu
@@ -252,7 +295,6 @@ case "$lsb_dist" in
         install_pouch_source
         start_pouch   
         if $e2e_test || $cri_test; then
-            #statements
             setup_repo_ubuntu 
             install_cni_ubuntu
             config_cni
@@ -260,47 +302,70 @@ case "$lsb_dist" in
             install_ginkgo 
         fi
         if $e2e_test; then
-            #statements
             install_etcd
-            checkout_kubernetes
+            get_kubernetes
+            start_e2e_test
         fi
         if $cri_test; then
-            #statements
             install_cri_tools              
             download_cri_tools
             run_cri_validation
         fi 
         if $k8s_cluster; then
-            #statements
             setup_repo_ubuntu            
             install_kubelet_ubuntu
             install_cni_ubuntu
-            config_cni
+            if $CONFIG_CNI; then
+                config_cni
+            fi
             config_kubelet        
-            setup_master
+            if $MASTER_NODE; then
+              setup_master
+            fi 
         fi
     ;;
 
     fedora|centos|redhat)
-        install_tools
-        install_containerd
-        install_runc
-        install_go
+        if $update_pouch; then
+            stop_pouch
+        else
+            install_tools
+            install_containerd
+            install_runc
+            install_go
+        fi
+        setup_path
         install_pouch_source
         start_pouch
-        setup_repo_centos
-        install_kubelet_centos
-        install_cni_centos
-        config_cni
-        config_kubelet        
-        setup_master        
-        setup_path
-        install_ginkgo 
-        install_cri_tools              
-        download_cri_tools
-        run_cri_validation
-        install_etcd
-        checkout_kubernetes
+        if $e2e_test || $cri_test; then
+            setup_repo_centos 
+            install_cni_centos
+            config_cni
+            setup_path
+            install_ginkgo 
+        fi
+        if $e2e_test; then
+            install_etcd
+            get_kubernetes
+            start_e2e_test
+        fi
+        if $cri_test; then
+            install_cri_tools              
+            download_cri_tools
+            run_cri_validation
+        fi 
+        if $k8s_cluster; then
+            setup_repo_centos
+            install_kubelet_centos
+            install_cni_centos
+            if $CONFIG_CNI; then
+                config_cni
+            fi
+            config_kubelet  
+            if $MASTER_NODE; then
+              setup_master
+            fi     
+        fi      
     ;;
 
     *)
