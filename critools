@@ -1,0 +1,141 @@
+cat /etc/crictl.yaml
+
+runtime-endpoint: unix:///var/run/pouchcri.sock 
+image-endpoint: unix:///var/run/pouchcri.sock 
+timeout: 10
+debug: true
+
+cat podsandbox-config.json
+{
+    "metadata": {
+        "name": "nginx-test-sandbox",
+        "namespace": "default",
+        "attempt": 2,
+        "uid": "hdishd00djaidwnduwk28bcsb"
+    },
+    "hostname":{
+        "log_directory":"/tmp/podlogs"
+    },
+    "linux": {
+        "security_context":{
+            "namespace_options":{
+                "network": 0,
+                "pid": 1,
+                "ipc": 0  
+            }
+        }
+    }
+}
+
+{
+  "metadata": {
+      "name": "nginx-container",
+      "attempt":2
+  },
+  "image":{
+      "image": "nginx"
+  },
+  "command": [
+  ],
+  "linux": {
+    "security_context":{
+        "namespace_options":{
+            "network": 0,
+            "pid": 1,
+            "ipc": 0  
+        }
+    }
+  }
+}
+
+
+cat seccompsandbox-config.json
+{
+    "metadata": {
+        "name": "seccomp-sandbox",
+        "namespace": "default",
+        "attempt": 2,
+        "uid": "hdishd00djaidwnduwk28bcsb"
+    },    
+    "log_directory":"/tmp/podlogs",    
+    "linux": {
+        "security_context":{
+            "seccomp_profile_path":"localhost//tmp/seccomp-tests528717768/block-chmod.json"            
+        }
+    }
+}
+cat seccompcontainer-config.json
+{
+  "metadata": {
+      "name": "seccomp-container-localhost",
+      "attempt":2
+  },
+  "image":{
+      "image": "busybox:1.26"
+  },
+  "command": [
+    "top"
+  ],
+  "linux": {
+    "security_context":{
+        "seccomp_profile_path":"localhost//tmp/seccomp-tests528717768/block-chmod.json"  
+    }
+  }
+}
+cat networksanbox-config.json
+{
+    "metadata": {
+        "name": "network-sandbox",
+        "namespace": "default",
+        "attempt": 2,
+        "uid": "cri-test-uidb77b74d5-54da-11e8-8847-42010a8c0006"
+    },  
+    "port_mappings":[{
+        "protocol":0,
+        "container_port":80,
+        "host_port":12000,
+        "host_ip":""
+    }]      
+}
+cat networkcontainer-config.json
+{
+  "metadata": {
+      "name": "network-container",
+      "attempt":2
+  },
+  "image":{
+      "image": "nginx"
+  },
+  "command": [
+  ],
+  "linux": {
+    "security_context":{
+        "seccomp_profile_path":"localhost//tmp/seccomp-tests528717768/block-chmod.json"  
+    }
+  }
+}
+
+cat reopenlogsandbox-config.json
+{
+    "metadata": {
+        "name": "PodSandbox-with-log-directory",
+        "namespace": "default",
+        "attempt": 2,
+        "uid": "cri-test-uid7cfc7f9b-5753-11e8-a54c-42010a8c0005"
+    }, 
+    "log_directory" :"/tmp/podLogTest562824053/PodSandbox-with-log-directory"      
+}
+cat reopenlogcontainer-config.json
+{
+  "metadata": {
+      "name": "container-reopen-log-test",
+      "attempt":2
+  },
+  "image":{
+      "image": "busybox:1.26"
+  },
+  "command": [
+    "sh -c while true; do echo hello World; sleep 1; done"
+  ],
+  "log_path":"container-reopen-log-test.log"  
+}
