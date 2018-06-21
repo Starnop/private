@@ -1,0 +1,16 @@
+// ContainerdAddr is the default unix socket address of containerd when CRI is enabled.
+/var/run/containerd/containerd.sock
+
+/var/run/containerd.sock
+
+
+protoc  --proto_path=. --proto_path=../../../../../vendor/ --proto_path=/d/MyFolder/Go/src/github.com/google/protobuf/src --gogo_out=plugins=grpc:. *.proto
+
+swagger generate model -f "apis/swagger.yml" -t "apis" -m types
+
+
+	// Volumes of container
+	Volumes map[string]struct{} `protobuf:"bytes,100,opt,name=volumes,json=volumes" json:"volumes,omitempty"`
+
+	// Volumes of image
+	Volumes map[string]struct{} `protobuf:"bytes,7,opt,name=volumes,json=volumes" json:"volumes,omitempty"`
