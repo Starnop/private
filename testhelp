@@ -37,7 +37,6 @@ sudo apt-get update
 RELEASE="1.10.2-00"
 apt-get -y install kubelet=${RELEASE} kubeadm=${RELEASE} kubectl=${RELEASE}
 
-
 kubeadm init --pod-network-cidr 10.244.0.0/16 --kubernetes-version stable-1.10
 
 export KUBECONFIG=/etc/kubernetes/admin.conf
@@ -72,3 +71,5 @@ godep save
 pouchd --enable-cri --cri-version v1alpha2 > pouchd.log  2>&1  &
 
 go run hack/e2e.go -- --test --test_args="--host=https://10.140.0.2:6443 --ginkgo.focus=\[Feature:Performance\]" --provider=local >/root/log.log
+
+for i in {1..1000};do echo $i; pouch run -d busybox sleep 1000;done
