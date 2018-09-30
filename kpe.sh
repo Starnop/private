@@ -220,7 +220,10 @@ install_cni_centos() {
 }
 
 config_kubelet() {
-	sed -i '2 i\Environment="KUBELET_EXTRA_ARGS=--container-runtime=remote --container-runtime-endpoint=unix:///var/run/pouchcri.sock --image-service-endpoint=unix:///var/run/pouchcri.sock"' /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+	cat > /etc/systemd/system/kubelet.service.d/0-pouch.conf <<EOF
+[Service]
+Environment="KUBELET_EXTRA_ARGS=--container-runtime=remote unix:///var/run/pouchcri.sock --image-service-endpoint=unix:///var/run/pouchcri.sock"
+EOF
 	systemctl daemon-reload
 	systemctl start kubelet
 }
