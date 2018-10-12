@@ -256,7 +256,7 @@ EOF
 }
 
 setup_master() {
-	kubeadm init --pod-network-cidr $MASTER_CIDR --ignore-preflight-errors=all        
+	kubeadm init --config kubeadm.conf --ignore-preflight-errors=all        
 	mkdir -p $HOME/.kube
 	sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 	sudo chown $(id -u):$(id -g) $HOME/.kube/config
