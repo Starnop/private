@@ -5,6 +5,12 @@ image-endpoint: unix:///var/run/pouchcri.sock
 timeout: 10
 debug: true
 
+
+
+ critest --runtime-endpoint /var/run/pouchcri.sock --image-endpoint /var/run/pouchcri.sock --focus="runtime should support attach [Conformance]" validation
+
+
+
 cat podsandbox-config.json
 {
     "metadata": {
@@ -139,3 +145,18 @@ cat reopenlogcontainer-config.json
   ],
   "log_path":"container-reopen-log-test.log"  
 }
+
+
+metadata:
+  attempt: 1
+  name: busybox-sandbox
+  namespace: default
+  uid: hdishd83djaidwnduwk28bcsb
+log_directory: /tmp
+linux:
+  security_context:
+    namespace_options:     
+        network: 2
+annotations:
+  io.kubernetes.cri.untrusted-workload: true
+
