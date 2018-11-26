@@ -47,8 +47,8 @@ k8s_cluster="true"
 e2e_focus="should report resource usage through the stats api"
 
 KUBERNETES_VERSION="release-1.10"
-KUBERNETES_VERSION_UBUNTU="1.11.3-00"
-KUBERNETES_VERSION_CENTOS="1.11.3-0.x86_64"
+KUBERNETES_VERSION_UBUNTU="1.10.2-00"
+KUBERNETES_VERSION_CENTOS="1.10.2-0.x86_64"
 MASTER_CIDR="10.244.0.0/16"
 pouchd_log="pouchd.log"
 pouch_github="https://github.com/alibaba/pouch.git"
@@ -224,8 +224,7 @@ config_kubelet() {
 [Service]
 Environment="KUBELET_EXTRA_ARGS=--container-runtime=remote --container-runtime-endpoint=unix:///var/run/pouchcri.sock --image-service-endpoint=unix:///var/run/pouchcri.sock"
 EOF
-	systemctl daemon-reload
-	systemctl start kubelet
+	systemctl daemon-reload	
 }
 
 config_cni() {
@@ -256,7 +255,7 @@ EOF
 }
 
 setup_master() {
-	kubeadm init --config kubeadm.conf --ignore-preflight-errors=all        
+	kubeadm init --ignore-preflight-errors=all        
 	mkdir -p $HOME/.kube
 	sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 	sudo chown $(id -u):$(id -g) $HOME/.kube/config
