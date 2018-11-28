@@ -46,9 +46,9 @@ e2e_test="false"
 k8s_cluster="true"
 e2e_focus="should report resource usage through the stats api"
 
-KUBERNETES_VERSION="release-1.10"
-KUBERNETES_VERSION_UBUNTU="1.10.2-00"
-KUBERNETES_VERSION_CENTOS="1.10.2-0.x86_64"
+KUBERNETES_VERSION="release-1.11"
+KUBERNETES_VERSION_UBUNTU="1.11.5-00"
+KUBERNETES_VERSION_CENTOS="1.11.5-0.x86_64"
 MASTER_CIDR="10.244.0.0/16"
 pouchd_log="pouchd.log"
 pouch_github="https://github.com/alibaba/pouch.git"
@@ -145,6 +145,7 @@ start_e2e_test(){
 install_containerd(){
 	wget https://github.com/containerd/containerd/releases/download/v1.0.3/containerd-1.0.3.linux-amd64.tar.gz
 	tar -xzvf containerd-1.0.3.linux-amd64.tar.gz -C /usr/local 
+	rm -rf containerd-1.0.3.linux-amd64.tar.gz
 }
 
 install_runc(){
@@ -255,7 +256,7 @@ EOF
 }
 
 setup_master() {
-	kubeadm init --ignore-preflight-errors=all        
+	kubeadm init --pod-network-cidr=10.244.0.0/16 --ignore-preflight-errors=all --cri-socket=/var/run/pouchcri.sock      
 	mkdir -p $HOME/.kube
 	sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 	sudo chown $(id -u):$(id -g) $HOME/.kube/config
