@@ -15,4 +15,7 @@ etcd:
   extraArgs:
     listen-peer-urls: http://127.0.0.1:2380
 
-  
+
+# bash completion
+echo "source <(kubectl completion bash)" >> ~/.bashrc
+echo "source <(helm completion bash)" >> ~/.bashrc
