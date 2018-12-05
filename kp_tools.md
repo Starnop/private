@@ -28,4 +28,5 @@ kubeadm init --kubernetes-version=1.11.5 --ignore-preflight-errors=all --cri-soc
 
 # kubectl delete
 NAMESPACE=default
-kubectl get pods -n $NAMESPACE | grep Evicted | awk '{print $1}' | xargs kubectl delete pod $NAMESPACE
+
+kubectl get pods -n $NAMESPACE | grep Evicted | awk '{print $1}' | xargs kubectl delete pod -n $NAMESPACE
