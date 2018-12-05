@@ -255,6 +255,41 @@ EOF
 EOF
 }
 
+config_pouch(){
+	cat >/etc/systemd/system/pouch.service <<-EOF
+{
+	[Unit]
+	Description=pouch
+	[Service]
+	ExecStart=/usr/local/bin/pouchd --enable-cri
+	ExecReload=/bin/kill -HUP $MAINPID
+	# Having non-zero Limit*s causes performance problems due to accounting overhead
+	# in the kernel. We recommend using cgroups to do container-local accounting.
+	LimitNOFILE=infinity
+	LimitNPROC=infinity
+	LimitCORE=infinity
+	TimeoutStartSec=0
+	# set delegate yes so that systemd does not reset the cgroups of pouch containers
+	Delegate=yes
+	# kill only the pouch process, not all processes in the cgroup
+	KillMode=process
+	# restart the pouch process if it exits prematurely
+	Restart=on-failure
+	StartLimitBurst=3
+	StartLimitInterval=60s
+	[Install]
+	WantedBy=multi-user.target
+}
+EOF
+	systemctl daemon-reload && systemctl restart pouch
+}
+
+config_alias(){
+	echo 'alias repouch="systemctl daemon-reload && systemctl restart pouch"' >> ~/.bashrc
+	echo "source <(kubectl completion bash)" >> ~/.bashrc
+	source ~/.bashrc
+}
+
 setup_master() {
 	kubeadm init --pod-network-cidr=10.244.0.0/16 --ignore-preflight-errors=all --cri-socket=/var/run/pouchcri.sock      
 	mkdir -p $HOME/.kube
@@ -264,6 +299,7 @@ setup_master() {
 	kubectl taint nodes --all node-role.kubernetes.io/master:NoSchedule-
 }
 
+store_
 command_exists() {
 		command -v "$@" > /dev/null 2>&1
 }
