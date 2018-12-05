@@ -24,3 +24,8 @@ echo "source <(helm completion bash)" >> ~/.bashrc
 kubeadm reset --ignore-preflight-errors=all --cri-socket=unix:///var/run/pouchcri.sock
 
 kubeadm init --kubernetes-version=1.11.5 --ignore-preflight-errors=all --cri-socket=/var/run/pouchcri.sock --pod-network-cidr=10.244.0.0/16
+
+
+# kubectl delete
+NAMESPACE=default
+kubectl get pods -n $NAMESPACE | grep Evicted | awk '{print $1}' | xargs kubectl delete pod $NAMESPACE
