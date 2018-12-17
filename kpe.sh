@@ -46,19 +46,22 @@ e2e_test="false"
 k8s_cluster="true"
 e2e_focus="should report resource usage through the stats api"
 
-KUBERNETES_VERSION="release-1.11"
-KUBERNETES_VERSION_UBUNTU="1.11.5-00"
+KUBERNETES_VERSION="release-1.13"
+KUBERNETES_VERSION_UBUNTU="1.13.1-00"
 KUBERNETES_VERSION_CENTOS="1.11.5-0.x86_64"
 MASTER_CIDR="10.244.0.0/16"
 pouchd_log="pouchd.log"
-pouch_github="https://github.com/alibaba/pouch.git"
-pouch_github_branch="master"
+pouch_github="https://github.com/Starnop/pouch.git"
+pouch_github_branch="cri-1.12"
 cri_version="v1alpha2"
 kubeadm_log="kubeadm.log"
 cri_tools_rlease="1.10"
 cri_shim="/var/run/pouchcri.sock"
 cri_validation_log="crivalidation.log"
-
+APT_GPG="https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg"
+# APT_GPG="https://packages.cloud.google.com/apt/doc/apt-key.gpg"
+APT_SOURCE="https://mirrors.aliyun.com/kubernetes/apt/"
+# APT_SOURCE="http://apt.kubernetes.io/"
 
 # preparation
 install_tools_ubuntu() {
@@ -171,7 +174,7 @@ install_pouch_source(){
 	free -m
 }
 
-start_pouch(){
+start_pouch_bak(){
 	cd
 	systemctl daemon-reload
 	pouchd --enable-cri --cri-version $cri_version > $pouchd_log  2>&1  &
@@ -181,9 +184,9 @@ start_pouch(){
 #kubernetes
 setup_repo_ubuntu(){
 	apt-get update && apt-get install -y apt-transport-https
-	curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+	curl -s $APT_GPG | apt-key add -
 	cat <<EOF > /etc/apt/sources.list.d/kubernetes.list
-deb http://apt.kubernetes.io/ kubernetes-xenial main
+deb $APT_SOURCE kubernetes-xenial main
 EOF
 	apt-get update
 }
@@ -255,30 +258,30 @@ EOF
 EOF
 }
 
-config_pouch(){
+start_pouch(){
 	cat >/etc/systemd/system/pouch.service <<-EOF
 {
-	[Unit]
-	Description=pouch
-	[Service]
-	ExecStart=/usr/local/bin/pouchd --enable-cri
-	ExecReload=/bin/kill -HUP $MAINPID
-	# Having non-zero Limit*s causes performance problems due to accounting overhead
-	# in the kernel. We recommend using cgroups to do container-local accounting.
-	LimitNOFILE=infinity
-	LimitNPROC=infinity
-	LimitCORE=infinity
-	TimeoutStartSec=0
-	# set delegate yes so that systemd does not reset the cgroups of pouch containers
-	Delegate=yes
-	# kill only the pouch process, not all processes in the cgroup
-	KillMode=process
-	# restart the pouch process if it exits prematurely
-	Restart=on-failure
-	StartLimitBurst=3
-	StartLimitInterval=60s
-	[Install]
-	WantedBy=multi-user.target
+[Unit]
+Description=pouch
+[Service]
+ExecStart=/usr/local/bin/pouchd --enable-cri
+ExecReload=/bin/kill -HUP $MAINPID
+# Having non-zero Limit*s causes performance problems due to accounting overhead
+# in the kernel. We recommend using cgroups to do container-local accounting.
+LimitNOFILE=infinity
+LimitNPROC=infinity
+LimitCORE=infinity
+TimeoutStartSec=0
+# set delegate yes so that systemd does not reset the cgroups of pouch containers
+Delegate=yes
+# kill only the pouch process, not all processes in the cgroup
+KillMode=process
+# restart the pouch process if it exits prematurely
+Restart=on-failure
+StartLimitBurst=3
+StartLimitInterval=60s
+[Install]
+WantedBy=multi-user.target
 }
 EOF
 	systemctl daemon-reload && systemctl restart pouch
@@ -299,7 +302,6 @@ setup_master() {
 	kubectl taint nodes --all node-role.kubernetes.io/master:NoSchedule-
 }
 
-store_
 command_exists() {
 		command -v "$@" > /dev/null 2>&1
 }
@@ -336,7 +338,7 @@ case "$lsb_dist" in
 		fi
 		setup_path
 		install_pouch_source
-		start_pouch   
+		start_pouch
 		if $e2e_test || $cri_test; then
 			setup_repo_ubuntu 
 			install_cni_ubuntu
@@ -366,6 +368,7 @@ case "$lsb_dist" in
 			  setup_master
 			fi 
 		fi
+		config_alias
 	;;
 
 	fedora|centos|redhat)
